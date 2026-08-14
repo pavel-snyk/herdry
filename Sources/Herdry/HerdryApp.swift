@@ -1,5 +1,9 @@
-import SwiftUI
+import AppKit
 import Foundation
+import SwiftUI
+
+let herdrPath = "/opt/homebrew/bin/herdr"
+let alacrittyPath = "/Applications/Alacritty.app/Contents/MacOS/alacritty"
 
 struct SessionList: Decodable {
     let sessions: [HerdrSession]
@@ -39,9 +43,8 @@ func loadSessions() throws -> [HerdrSession] {
     let process = Process()
     let output = Pipe()
 
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+    process.executableURL = URL(fileURLWithPath: herdrPath)
     process.arguments = [
-        "herdr",
         "session",
         "list",
         "--json"
@@ -64,13 +67,11 @@ func loadSessions() throws -> [HerdrSession] {
 func attachToSession(_ session: HerdrSession) {
     let process = Process()
 
-    process.executableURL = URL(
-        fileURLWithPath: "/Applications/Alacritty.app/Contents/MacOS/alacritty"
-    )
+    process.executableURL = URL(fileURLWithPath: alacrittyPath)
 
     process.arguments = [
         "-e",
-        "/opt/homebrew/bin/herdr",
+        herdrPath,
         "session",
         "attach",
         session.name
@@ -94,7 +95,23 @@ struct HerdryApp: App {
     @StateObject private var store = SessionStore()
 
     var body: some Scene {
-        MenuBarExtra("Herdry", systemImage: "circle") {
+        let menuBarIcon: NSImage = {
+            guard
+            let url = Bundle.main.url(
+                forResource: "herdr-menubar",
+                withExtension: "png"
+            ),
+            let image = NSImage(contentsOf: url)
+            else {
+                fatalError("Missing herdr-menubar.png")
+            }
+
+            image.isTemplate = true
+            image.size = NSSize(width: 21, height: 21)
+
+            return image
+        }()
+        MenuBarExtra {
             ForEach(store.sessions) { session in
                 Button {
                     attachToSession(session)
@@ -108,6 +125,15 @@ struct HerdryApp: App {
                 }
                 .disabled(!session.running)
             }
+
+            Divider()
+
+            Button("Quit Herdry") {
+                NSApplication.shared.terminate(nil)
+            }
+            .keyboardShortcut("q")
+        } label: {
+            Image(nsImage: menuBarIcon)
         }
     }
 }

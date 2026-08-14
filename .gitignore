@@ -11,4 +11,4 @@
 
 # Generated app bundle
 *.app
-
+dist/
