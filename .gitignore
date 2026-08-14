@@ -1,0 +1,14 @@
+# SwiftPM
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# JetBrains / IntelliJ
+.idea/
+*.iml
+
+# Generated app bundle
+*.app
+
