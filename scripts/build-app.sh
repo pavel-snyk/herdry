@@ -22,8 +22,8 @@ cp "App/Info.plist" \
    "$APP_DIR/Contents/Info.plist"
 
 mkdir -p "$APP_DIR/Contents/Resources"
-cp App/Resources/herdr-menubar.png \
-   "$APP_DIR/Contents/Resources/herdr-menubar.png"
+cp -R "$BIN_DIR/${APP_NAME}_${APP_NAME}.bundle" \
+   "$APP_DIR/Contents/Resources/${APP_NAME}_${APP_NAME}.bundle"
 
 codesign \
     --force \

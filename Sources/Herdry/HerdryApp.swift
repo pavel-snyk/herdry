@@ -183,7 +183,7 @@ struct HerdryApp: App {
     var body: some Scene {
         let menuBarIcon: NSImage = {
             guard
-            let url = Bundle.main.url(
+            let url = Bundle.module.url(
                 forResource: "herdr-menubar",
                 withExtension: "png"
             ),

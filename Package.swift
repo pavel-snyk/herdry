@@ -8,6 +8,9 @@ let package = Package(
         .macOS(.v13)
     ],
     targets: [
-        .executableTarget(name: "Herdry")
+        .executableTarget(
+            name: "Herdry",
+            resources: [.copy("Resources")]
+        )
     ]
 )
