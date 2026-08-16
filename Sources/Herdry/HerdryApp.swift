@@ -7,13 +7,11 @@ struct HerdryApp: App {
 
     var body: some Scene {
         let menuBarIcon: NSImage = {
-            guard
-            let url = Bundle.module.url(
+            guard let url = Bundle.module.url(
                 forResource: "herdry-menubar",
                 withExtension: "png"
             ),
-            let image = NSImage(contentsOf: url)
-            else {
+                  let image = NSImage(contentsOf: url) else {
                 fatalError("Missing herdry-menubar.png")
             }
 
@@ -29,11 +27,16 @@ struct HerdryApp: App {
                 } label: {
                     Label(
                         snapshot.session.name,
-                        systemImage: snapshot.session.running
-                                ? "circle.fill"
+                        systemImage: snapshot.session.running ? "circle.fill"
                                 : "circle"
                     )
                 }
+                .badge(snapshot.blockedCount.flatMap { blockedCount in
+                    blockedCount > 0
+                            ? Text("\(blockedCount) blocked")
+                            : nil
+                })
+                .badgeProminence(.decreased)
                 .disabled(!snapshot.session.running)
             }
 
