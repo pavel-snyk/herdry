@@ -184,16 +184,16 @@ struct HerdryApp: App {
         let menuBarIcon: NSImage = {
             guard
             let url = Bundle.module.url(
-                forResource: "herdr-menubar",
+                forResource: "herdry-menubar",
                 withExtension: "png"
             ),
             let image = NSImage(contentsOf: url)
             else {
-                fatalError("Missing herdr-menubar.png")
+                fatalError("Missing herdry-menubar.png")
             }
 
             image.isTemplate = true
-            image.size = NSSize(width: 21, height: 21)
+            image.size = NSSize(width: 20, height: 20)
 
             return image
         }()

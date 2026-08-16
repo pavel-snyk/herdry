@@ -10,6 +10,9 @@
     <key>CFBundleDisplayName</key>
     <string>Herdry</string>
 
+    <key>CFBundleIconFile</key>
+    <string>Herdry.icns</string>
+
     <key>CFBundleIdentifier</key>
     <string>dev.herdry.Herdry</string>
 
