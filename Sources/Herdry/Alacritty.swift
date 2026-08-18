@@ -2,6 +2,12 @@ import Foundation
 
 let alacrittyPath = "/Applications/Alacritty.app/Contents/MacOS/alacritty"
 
+private struct AlacrittyCommandResult {
+    let status: Int32
+    let stdout: String
+    let stderr: String
+}
+
 func attachToSession(_ session: HerdrSession) {
     if let socket = findAlacrittySocket() {
         attachUsingExistingAlacritty(session, socket: socket)
@@ -85,31 +91,124 @@ func attachUsingExistingAlacritty(
     _ session: HerdrSession,
     socket: String
 ) {
+    do {
+        let findArguments = [
+            "msg",
+            "--socket",
+            socket,
+            "find-window",
+            "--title",
+            session.name
+        ]
+        let findResult = try runAlacrittyCommand(findArguments)
+
+        if findResult.status == 0 {
+            let windowIDText = findResult.stdout.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+            guard let windowID = UInt64(windowIDText) else {
+                print(
+                    "Failed to attach using existing Alacritty: invalid window ID;",
+                    "status: \(findResult.status);",
+                    "stdout: \(String(reflecting: findResult.stdout));",
+                    "stderr: \(String(reflecting: findResult.stderr))"
+                )
+                return
+            }
+
+            let focusArguments = [
+                "msg",
+                "--socket",
+                socket,
+                "focus-window",
+                "--window-id",
+                String(windowID)
+            ]
+            let focusResult = try runAlacrittyCommand(focusArguments)
+
+            guard focusResult.status == 0 else {
+                logAlacrittyFailure(focusArguments, result: focusResult)
+                return
+            }
+
+            return
+        }
+
+        guard isWindowNotFound(findResult) else {
+            logAlacrittyFailure(findArguments, result: findResult)
+            return
+        }
+
+        let createArguments = [
+            "msg",
+            "--socket",
+            socket,
+            "create-window",
+            "--title",
+            session.name,
+            "-e",
+            herdrPath,
+            "session",
+            "attach",
+            session.name
+        ]
+        let createResult = try runAlacrittyCommand(createArguments)
+
+        if createResult.status != 0 {
+            logAlacrittyFailure(createArguments, result: createResult)
+        }
+    } catch {
+        print("Failed to attach using existing Alacritty:", error)
+    }
+}
+
+private func isWindowNotFound(_ result: AlacrittyCommandResult) -> Bool {
+    let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    return result.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && (stderr.hasPrefix("Error: no window found with title ")
+                    || stderr.hasPrefix(
+                        "Error: Custom { kind: Other, error: \"no window found with title "
+                    ))
+}
+
+private func logAlacrittyFailure(
+    _ arguments: [String],
+    result: AlacrittyCommandResult
+) {
+    print(
+        "Failed to attach using existing Alacritty:",
+        "alacritty \(arguments.joined(separator: " ")) exited with status \(result.status);",
+        "stdout: \(String(reflecting: result.stdout));",
+        "stderr: \(String(reflecting: result.stderr))"
+    )
+}
+
+private func runAlacrittyCommand(
+    _ arguments: [String]
+) throws -> AlacrittyCommandResult {
     let process = Process()
+    let output = Pipe()
+    let error = Pipe()
 
     process.executableURL = URL(
         fileURLWithPath: alacrittyPath
     )
+    process.arguments = arguments
+    process.standardOutput = output
+    process.standardError = error
 
-    process.arguments = [
-        "msg",
-        "--socket",
-        socket,
-        "create-window",
-        "-T",
-        session.name,
-        "-e",
-        herdrPath,
-        "session",
-        "attach",
-        session.name
-    ]
+    try process.run()
 
-    process.standardError = FileHandle.standardError
+    let stdout = output.fileHandleForReading.readDataToEndOfFile()
+    let stderr = error.fileHandleForReading.readDataToEndOfFile()
 
-    do {
-        try process.run()
-    } catch {
-        print("Failed to attach using existing Alacritty:", error)
-    }
+    process.waitUntilExit()
+
+    return AlacrittyCommandResult(
+        status: process.terminationStatus,
+        stdout: String(decoding: stdout, as: UTF8.self),
+        stderr: String(decoding: stderr, as: UTF8.self)
+    )
 }
