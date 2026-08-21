@@ -40,7 +40,13 @@ routing.
 
 ## Installation
 
-The first packaged release is coming soon.
+Download the latest experimental build from GitHub Releases.
+
+Current limitations:
+
+- Herdry currently expects Herdr at `/opt/homebrew/bin/herdr`.
+- Release builds are ad-hoc signed and not notarized yet, so macOS Gatekeeper or
+  managed-device policies may require additional approval.
 
 ## Status
 
