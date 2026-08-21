@@ -2,7 +2,7 @@ struct SessionList: Decodable, Sendable {
     let sessions: [HerdrSession]
 }
 
-struct HerdrSession: Decodable, Identifiable, Sendable {
+struct HerdrSession: Decodable, Identifiable, Equatable, Sendable {
     let name: String
     let running: Bool
     let `default`: Bool
@@ -10,7 +10,7 @@ struct HerdrSession: Decodable, Identifiable, Sendable {
     var id: String { name }
 }
 
-struct SessionSnapshot: Identifiable, Sendable {
+struct SessionSnapshot: Identifiable, Equatable, Sendable {
     let session: HerdrSession
     let blockedCount: Int?
 

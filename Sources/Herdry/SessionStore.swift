@@ -39,9 +39,15 @@ final class SessionStore: ObservableObject {
         }
 
         do {
-            sessions = try await loadSessionSnapshots(
+            let nextSessions = try await loadSessionSnapshots(
                 previousBlockedCounts: previousBlockedCounts
             )
+
+            guard nextSessions != sessions else {
+                return
+            }
+
+            sessions = nextSessions
         } catch is CancellationError {
             return
         } catch {
