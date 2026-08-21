@@ -36,5 +36,8 @@
 
     <key>LSUIElement</key>
     <true/>
+
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Herdry uses iTerm2 automation to open and focus Herdr sessions.</string>
 </dict>
 </plist>

@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct HerdryApp: App {
     @StateObject private var store = SessionStore()
+    @AppStorage("terminalKind") private var selectedTerminal = TerminalKind.alacritty
 
     var body: some Scene {
         let menuBarIcon: NSImage = {
@@ -23,7 +24,7 @@ struct HerdryApp: App {
         MenuBarExtra {
             ForEach(store.sessions) { snapshot in
                 Button {
-                    attachToSession(snapshot.session)
+                    jump(to: snapshot.session)
                 } label: {
                     Label(
                         snapshot.session.name,
@@ -41,12 +42,73 @@ struct HerdryApp: App {
 
             Divider()
 
+            Menu("Terminal") {
+                Picker("Terminal", selection: $selectedTerminal) {
+                    ForEach(TerminalKind.allCases) { terminal in
+                        Text(terminal.displayName).tag(terminal)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
+
+            Divider()
+
             Button("Quit Herdry") {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
         } label: {
             MenuBarIcon(store: store, image: menuBarIcon)
+        }
+    }
+
+    @MainActor
+    private func jump(to session: HerdrSession) {
+        switch selectedTerminal {
+        case .alacritty:
+            attachToSession(session)
+        case .iTerm2:
+            Task {
+                do {
+                    try await jumpToITerm2Session(session)
+                } catch {
+                    NSLog(
+                        "Failed to open Herdr session %@ in iTerm2: %@",
+                        session.name,
+                        error.localizedDescription
+                    )
+                    showITerm2Error(error)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func showITerm2Error(_ error: Error) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Couldn’t open the Herdr session in iTerm2"
+        alert.informativeText = error.localizedDescription
+        alert.addButton(withTitle: "OK")
+
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        alert.runModal()
+    }
+}
+
+enum TerminalKind: String, CaseIterable, Identifiable {
+    case alacritty
+    case iTerm2
+
+    var id: Self { self }
+
+    var displayName: String {
+        switch self {
+        case .alacritty:
+            "Alacritty"
+        case .iTerm2:
+            "iTerm2"
         }
     }
 }
